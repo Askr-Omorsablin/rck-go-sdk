@@ -1,3 +1,4 @@
+
 # RCK Go SDK - Programming Guide
 
 An elegant Go SDK that uses RCK (Relational Calculate Kernel) as an intelligent function kernel.
@@ -23,6 +24,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/Askr-Omorsablin/rck-go-sdk"
 	"github.com/Askr-Omorsablin/rck-go-sdk/compute"
@@ -35,10 +37,17 @@ func main() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
+	// Get predefined schema
+	schema, err := compute.GetPredefinedSchema("basic_analysis")
+	if err != nil {
+		log.Fatalf("Failed to get schema: %v", err)
+	}
+
 	// Use RCK as intelligent function kernel
 	result, err := client.Compute.CustomCompute(context.Background(), compute.CustomComputeParams{
-		Text: "Spring has arrived, all things are reviving",
-		Task: "Analyze sentiment and generate corresponding poetry",
+		Text:         "Spring has arrived, all things are reviving",
+		Task:         "Analyze sentiment and generate corresponding poetry",
+		OutputSchema: schema,
 	})
 	if err != nil {
 		log.Fatalf("Computation failed: %v", err)
@@ -48,9 +57,14 @@ func main() {
 }
 ```
 
-## 📋 Complete Example
+### Expected Output
+```
+Analysis result: map[analysis:The text expresses a positive sentiment associated with the arrival of spring and the revitalization of nature, evoking feelings of joy and optimism. emotion:Joyful and optimistic theme:Renewal and rebirth]
+```
 
-Here's a comprehensive example demonstrating all major SDK features:
+## 📋 Complete Working Example
+
+Here's a comprehensive, tested example demonstrating all major SDK features:
 
 ```go
 package main
@@ -60,6 +74,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/Askr-Omorsablin/rck-go-sdk"
 	"github.com/Askr-Omorsablin/rck-go-sdk/compute"
@@ -95,7 +110,7 @@ func runCompleteExample(client *rck.Client) {
 	}
 	fmt.Println("✅ Connection successful")
 
-	// 2. Text analysis
+	// 2. Text analysis with predefined schema
 	fmt.Println("\n2. Text Analysis Example:")
 	poemText := "Moonlight before my bed, looks like frost on the ground. I raise my head to see the moon, lower it to think of home."
 	
@@ -130,22 +145,18 @@ func runCompleteExample(client *rck.Client) {
 		}
 	}
 
-	// 4. Custom schema computation
+	// 4. Custom schema computation with proper error handling
 	fmt.Println("\n4. Custom Schema Example:")
-	customSchema := map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"poem":             map[string]string{"type": "string", "description": "Created poetry"},
-			"creative_process": map[string]string{"type": "string", "description": "Creative thinking process"},
-			"style_notes":      map[string]string{"type": "string", "description": "Style explanation"},
-		},
-		"required": []string{"poem"},
+	poemSchema, err := compute.GetPredefinedSchema("poem_creation")
+	if err != nil {
+		fmt.Printf("Failed to get poem schema: %v\n", err)
+		return
 	}
 
 	poemCreation, err := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
 		Text:         "Spring flowers blooming in the garden",
 		Task:         "Create a poem based on this theme",
-		OutputSchema: customSchema,
+		OutputSchema: poemSchema,
 		CustomFields: map[string]string{
 			"style": "modern free verse",
 			"mood":  "joyful and peaceful",
@@ -158,6 +169,8 @@ func runCompleteExample(client *rck.Client) {
 		if process, ok := poemCreation.Data["creative_process"]; ok {
 			fmt.Printf("Creative process: %.100s...\n", fmt.Sprintf("%v", process))
 		}
+	} else {
+		fmt.Printf("Poem creation failed: %v\n", err)
 	}
 
 	// 5. Image generation
@@ -172,14 +185,14 @@ func runCompleteExample(client *rck.Client) {
 		fmt.Printf("✅ Image generation successful: %d images created\n", imageResult.Count)
 		
 		// Save images (optional)
-		savedFiles, err := client.Image.SaveImages(imageResult, ".", "example_landscape")
-		if err != nil {
-			fmt.Printf("Image saving failed: %v\n", err)
+		savedFiles, saveErrors := client.Image.SaveImages(imageResult, ".", "example_landscape")
+		if len(saveErrors) > 0 {
+			fmt.Printf("Some images failed to save: %v\n", saveErrors)
 		} else {
 			fmt.Printf("Images saved: %v\n", savedFiles)
 		}
 	} else {
-		fmt.Println("❌ Image generation failed")
+		fmt.Printf("❌ Image generation failed: %v\n", err)
 	}
 
 	// 6. Advanced workflow: Poem to Image
@@ -187,23 +200,16 @@ func runCompleteExample(client *rck.Client) {
 	originalPoem := "Empty mountains, no one in sight, but hearing human voices echo. Returning light enters deep forest, again illuminating green moss."
 
 	// Step 1: Convert poem to scene description
+	sceneSchema, err := compute.GetPredefinedSchema("scene_description")
+	if err != nil {
+		fmt.Printf("Failed to get scene schema: %v\n", err)
+		return
+	}
+
 	sceneResult, err := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-		Text: originalPoem,
-		Task: "Analyze the poem content and create detailed visual scene description",
-		OutputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"scene_description": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"main_subjects": map[string]string{"type": "string"},
-						"lighting":      map[string]string{"type": "string"},
-						"composition":   map[string]string{"type": "string"},
-						"style":         map[string]string{"type": "string"},
-					},
-				},
-			},
-		},
+		Text:         originalPoem,
+		Task:         "Analyze the poem content and create detailed visual scene description",
+		OutputSchema: sceneSchema,
 		CustomFields: map[string]string{"target_art_style": "Traditional Chinese landscape painting"},
 	})
 
@@ -224,19 +230,14 @@ func runCompleteExample(client *rck.Client) {
 			if err == nil && workflowImage.Success() {
 				fmt.Printf("  ✅ Workflow completed: Poem → Scene → Image (%d images)\n", workflowImage.Count)
 			} else {
-				fmt.Println("  ❌ Image generation step failed")
+				fmt.Printf("  ❌ Image generation step failed: %v\n", err)
 			}
 		}
 	} else {
-		fmt.Println("Scene description conversion failed")
+		fmt.Printf("Scene description conversion failed: %v\n", err)
 	}
 
 	fmt.Println("\n=== Example Complete ===")
-	fmt.Println("This example demonstrates:")
-	fmt.Println("• Basic text analysis and translation")
-	fmt.Println("• Custom schema and output formatting")
-	fmt.Println("• Single and batch image generation")
-	fmt.Println("• Advanced multi-step workflows")
 }
 ```
 
@@ -298,7 +299,6 @@ Use RCK as the intelligent kernel of functions, encapsulating complex AI logic i
 ```go
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/Askr-Omorsablin/rck-go-sdk"
@@ -320,6 +320,7 @@ func AnalyzeEmotion(client *rck.Client, ctx context.Context, text string) (*Emot
 			"intensity": map[string]string{"type": "number"},
 			"keywords":  map[string]interface{}{"type": "array", "items": map[string]string{"type": "string"}},
 		},
+		"required": []string{"emotion", "intensity", "keywords"},
 	}
 
 	result, err := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
@@ -347,9 +348,15 @@ func AnalyzeEmotion(client *rck.Client, ctx context.Context, text string) (*Emot
 
 ```go
 func IntelligentSummary(client *rck.Client, ctx context.Context, content string, maxLength int, style string) (string, error) {
+	schema, err := compute.GetPredefinedSchema("basic_analysis")
+	if err != nil {
+		return "", fmt.Errorf("failed to get schema: %w", err)
+	}
+
 	result, err := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-		Text: content,
-		Task: fmt.Sprintf("Generate a summary within %d words", maxLength),
+		Text:         content,
+		Task:         fmt.Sprintf("Generate a summary within %d words", maxLength),
+		OutputSchema: schema,
 		CustomFields: map[string]string{
 			"style":         style,
 			"focus":         "core viewpoints",
@@ -360,7 +367,7 @@ func IntelligentSummary(client *rck.Client, ctx context.Context, content string,
 		return "", err
 	}
 
-	summary, ok := result.Data["summary"].(string)
+	summary, ok := result.Data["analysis"].(string)
 	if !ok {
 		return "", fmt.Errorf("failed to extract summary from result")
 	}
@@ -375,19 +382,17 @@ func IntelligentSummary(client *rck.Client, ctx context.Context, content string,
 
 ```go
 func CreatePoemFromImage(client *rck.Client, ctx context.Context, imageURL, poemStyle string) (map[string]interface{}, error) {
+	schema, err := compute.GetPredefinedSchema("poem_creation")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get poem schema: %w", err)
+	}
+
 	result, err := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-		Text: "Please create poetry based on the artistic conception of the image",
-		Task: "Observe image content, feel its artistic conception, and create poetry in corresponding style",
+		Text:         "Please create poetry based on the artistic conception of the image",
+		Task:         "Observe image content, feel its artistic conception, and create poetry in corresponding style",
+		OutputSchema: schema,
 		Resources: []map[string]string{
 			{"inspiration_image": imageURL},
-		},
-		OutputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"poem":        map[string]string{"type": "string"},
-				"inspiration": map[string]string{"type": "string"},
-				"mood":        map[string]string{"type": "string"},
-			},
 		},
 		CustomFields: map[string]string{
 			"style":               poemStyle,
@@ -403,6 +408,34 @@ func CreatePoemFromImage(client *rck.Client, ctx context.Context, imageURL, poem
 
 // Usage
 // poemResult, err := CreatePoemFromImage(client, context.Background(), "https://example.com/sunset.jpg", "seven-character regulated verse")
+```
+
+## 📊 Available Predefined Schemas
+
+The SDK provides several predefined output schemas for common use cases:
+
+### 1. Basic Analysis (`basic_analysis`)
+```go
+schema, err := compute.GetPredefinedSchema("basic_analysis")
+// Returns: emotion, theme, analysis fields
+```
+
+### 2. Poem Creation (`poem_creation`)  
+```go
+schema, err := compute.GetPredefinedSchema("poem_creation")
+// Returns: poem, creative_process, style_notes fields
+```
+
+### 3. Scene Description (`scene_description`)
+```go
+schema, err := compute.GetPredefinedSchema("scene_description")
+// Returns: main_subjects, lighting, composition, style fields
+```
+
+### 4. Translation (`translation`)
+```go
+schema, err := compute.GetPredefinedSchema("translation")
+// Returns: translation, original_language, target_language, cultural_notes fields
 ```
 
 ## ⚙️ Configuration
@@ -440,6 +473,9 @@ if err != nil {
 	if errors.As(err, &apiErr) {
 		// This is an API error (e.g., 4xx, 5xx)
 		fmt.Printf("API error: %s, status code: %d\n", apiErr.Message, apiErr.StatusCode)
+		if apiErr.ResponseData != nil {
+			fmt.Printf("Response details: %v\n", apiErr.ResponseData)
+		}
 	} else if errors.Is(err, sdkerrors.ErrAuthentication) {
 		// This is an authentication error
 		fmt.Println("Authentication failed, please check your API Key.")
@@ -450,6 +486,43 @@ if err != nil {
 }
 ```
 
+## 💡 Best Practices
+
+### 1. Always Use Schemas
+```go
+// ❌ Bad: Missing OutputSchema may cause 400 errors
+result, err := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
+	Text: "Hello",
+	Task: "Analyze",
+	// Missing OutputSchema
+})
+
+// ✅ Good: Always provide OutputSchema
+schema, _ := compute.GetPredefinedSchema("basic_analysis")
+result, err := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
+	Text:         "Hello",
+	Task:         "Analyze",
+	OutputSchema: schema,
+})
+```
+
+### 2. Handle Timeouts Properly
+```go
+// Set appropriate timeout for your use case
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+result, err := client.Compute.CustomCompute(ctx, params)
+```
+
+### 3. Test Connection First
+```go
+// Test connection before making actual requests
+if err := client.TestConnection(ctx); err != nil {
+	log.Fatalf("Connection test failed: %v", err)
+}
+```
+
 ## 🌟 Unlimited Flexibility in Language and Format
 
 RCK supports extreme flexibility:
@@ -457,30 +530,36 @@ RCK supports extreme flexibility:
 ### Any Language
 ```go
 // English processing
+schema, _ := compute.GetPredefinedSchema("basic_analysis")
 result, _ := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-	Text: "To be or not to be, that is the question",
-	Task: "Analyze the philosophical connotations of this Shakespeare quote",
+	Text:         "To be or not to be, that is the question",
+	Task:         "Analyze the philosophical connotations of this Shakespeare quote",
+	OutputSchema: schema,
 })
 
-// Chinese processing  
+// Chinese processing
 result, _ = client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-	Text: "春眠不觉晓，处处闻啼鸟",
-	Task: "Translate to English while preserving poetic sentiment",
+	Text:         "春眠不觉晓，处处闻啼鸟",
+	Task:         "Translate to English while preserving poetic sentiment",
+	OutputSchema: schema,
 })
 
 // Multi-language mixing
 result, _ = client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-	Text: "Hello world, Bonjour le monde",
-	Task: "Identify languages and translate uniformly to English",
+	Text:         "Hello world, Bonjour le monde",
+	Task:         "Identify languages and translate uniformly to English",
+	OutputSchema: schema,
 })
 ```
 
 ### Any Format
 ```go
 // Mathematical formulas
+schema, _ := compute.GetPredefinedSchema("basic_analysis")
 result, _ := client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-	Text: "f(x) = x^2 - 4x + 3",
-	Task: "Find the minimum value of the function and describe the graph",
+	Text:         "f(x) = x^2 - 4x + 3",
+	Task:         "Find the minimum value of the function and describe the graph",
+	OutputSchema: schema,
 	CustomFields: map[string]string{"custom_code": "def calculate_min(x): return x**2 - 4*x + 3"},
 })
 
@@ -493,7 +572,8 @@ result, _ = client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
 		}
 		return fibonacci(n-1) + fibonacci(n-2)
 	}`,
-	Task: "Analyze code complexity and provide optimization suggestions",
+	Task:         "Analyze code complexity and provide optimization suggestions",
+	OutputSchema: schema,
 	CustomFields: map[string]string{"language": "Go"},
 })
 ```
@@ -516,9 +596,9 @@ func GenerateArtwork(client *rck.Client, ctx context.Context, description, artSt
 
 	if imageResponse.Success() {
 		// Save images
-		savedFiles, err := client.Image.SaveImages(imageResponse, ".", "artwork")
-		if err != nil {
-			return err
+		savedFiles, saveErrors := client.Image.SaveImages(imageResponse, ".", "artwork")
+		if len(saveErrors) > 0 {
+			return fmt.Errorf("image saving failed: %v", saveErrors)
 		}
 		fmt.Printf("Generation successful: %d images saved to %v\n", imageResponse.Count, savedFiles)
 	} else {
@@ -549,24 +629,22 @@ func NewIntelligentAssistant(apiKey string) (*IntelligentAssistant, error) {
 
 func (ia *IntelligentAssistant) ProcessRequest(ctx context.Context, userInput, context string) (map[string]interface{}, error) {
 	// First analyze user intent
+	schema, err := compute.GetPredefinedSchema("basic_analysis")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get schema: %w", err)
+	}
+
 	intentAnalysis, err := ia.client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-		Text: userInput,
-		Task: "Analyze user intent and categorize",
-		OutputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"intent":          map[string]string{"type": "string"},
-				"confidence":      map[string]string{"type": "number"},
-				"required_action": map[string]string{"type": "string"},
-			},
-		},
+		Text:         userInput,
+		Task:         "Analyze user intent and categorize",
+		OutputSchema: schema,
 		CustomFields: map[string]string{"context": context},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	intent, _ := intentAnalysis.Data["intent"].(string)
+	intent, _ := intentAnalysis.Data["theme"].(string)
 	
 	// Execute different processing logic based on intent
 	switch intent {
@@ -580,9 +658,11 @@ func (ia *IntelligentAssistant) ProcessRequest(ctx context.Context, userInput, c
 }
 
 func (ia *IntelligentAssistant) handleCreativeRequest(ctx context.Context, userInput string) (map[string]interface{}, error) {
+	schema, _ := compute.GetPredefinedSchema("poem_creation")
 	result, err := ia.client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-		Text: userInput,
-		Task: "Create content based on user needs",
+		Text:         userInput,
+		Task:         "Create content based on user needs",
+		OutputSchema: schema,
 		CustomFields: map[string]string{
 			"creativity_level": "high",
 			"style":           "engaging",
@@ -596,13 +676,15 @@ func (ia *IntelligentAssistant) handleCreativeRequest(ctx context.Context, userI
 }
 
 func (ia *IntelligentAssistant) handleAnalysisRequest(ctx context.Context, userInput string) (map[string]interface{}, error) {
+	schema, _ := compute.GetPredefinedSchema("basic_analysis")
 	result, err := ia.client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-		Text: userInput,
-		Task: "Conduct in-depth analysis and provide insights",
+		Text:         userInput,
+		Task:         "Conduct in-depth analysis and provide insights",
+		OutputSchema: schema,
 		CustomFields: map[string]string{
-			"analysis_depth":     "detailed",
+			"analysis_depth":      "detailed",
 			"include_suggestions": "yes",
-			"format":             "structured",
+			"format":              "structured",
 		},
 	})
 	if err != nil {
@@ -612,9 +694,11 @@ func (ia *IntelligentAssistant) handleAnalysisRequest(ctx context.Context, userI
 }
 
 func (ia *IntelligentAssistant) handleGeneralRequest(ctx context.Context, userInput string) (map[string]interface{}, error) {
+	schema, _ := compute.GetPredefinedSchema("basic_analysis")
 	result, err := ia.client.Compute.CustomCompute(ctx, compute.CustomComputeParams{
-		Text: userInput,
-		Task: "Provide helpful answers and suggestions",
+		Text:         userInput,
+		Task:         "Provide helpful answers and suggestions",
+		OutputSchema: schema,
 		CustomFields: map[string]string{
 			"tone":         "friendly",
 			"detail_level": "moderate",
@@ -644,4 +728,4 @@ For questions or assistance, please contact:
 
 ---
 
-> 💡 **Core Philosophy**: Use RCK as an intelligent function kernel, describing "what to do" declaratively rather than "how to do it". Let AI handle complex logic while you only need to define inputs, constraints, and expected outputs. 
+> 💡 **Core Philosophy**: Use RCK as an intelligent function kernel, describing "what to do" declaratively rather than "how to do it". Let AI handle complex logic while you only need to define inputs, constraints, and expected outputs.
