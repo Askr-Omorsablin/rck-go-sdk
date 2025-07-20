@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// ImageResponse 是图像生成 API 调用的响应。
+// ImageResponse is the response for image generation API calls.
 type ImageResponse struct {
 	Images  []ImageInfo
 	Count   int
@@ -13,26 +13,26 @@ type ImageResponse struct {
 	RawData map[string]interface{}
 }
 
-// ImageInfo 包含单个生成图像的信息。
+// ImageInfo contains information about a single generated image.
 type ImageInfo struct {
 	URL       string
-	ImageData string // Base64 编码的图像数据
+	ImageData string // Base64 encoded image data
 	Index     int
 	Size      int
 	MimeType  string
 }
 
-// Success 检查请求是否成功且至少生成了一张图片。
+// Success checks if the request was successful and at least one image was generated.
 func (r *ImageResponse) Success() bool {
 	return r.Status == "success" && r.Count > 0
 }
 
-// HasData 检查图像信息是否包含可用的数据（URL 或 Base64 数据）。
+// HasData checks if the image info contains usable data (URL or Base64 data).
 func (i *ImageInfo) HasData() bool {
 	return i.URL != "" || i.ImageData != ""
 }
 
-// decodeMapToStruct 是一个辅助函数，用于将 map[string]interface{} 解码到结构体。
+// decodeMapToStruct is a helper function to decode map[string]interface{} into a struct.
 func decodeMapToStruct(data map[string]interface{}, v interface{}) error {
 	b, err := json.Marshal(data)
 	if err != nil {

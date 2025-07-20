@@ -5,43 +5,43 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/rck/rck-go-sdk/internal/apimodels"
-	"github.com/rck/rck-go-sdk/internal/httpclient"
-	"github.com/rck/rck-go-sdk/sdkerrors"
+	"github.com/Askr-Omorsablin/rck-go-sdk/internal/apimodels"
+	"github.com/Askr-Omorsablin/rck-go-sdk/internal/httpclient"
+	"github.com/Askr-Omorsablin/rck-go-sdk/sdkerrors"
 )
 
 const computeEndpoint = "/compute/execute"
 
-// Kernel 提供了访问 RCK 文本计算功能的核心方法。
+// Kernel provides core methods for accessing RCK text computation functionality.
 type Kernel struct {
 	client *httpclient.Client
 }
 
-// NewKernel 创建一个新的计算内核实例。
-// 此函数由主 Client 调用，用户通常不直接使用。
+// NewKernel creates a new compute kernel instance.
+// This function is called by the main Client and is not typically used directly by users.
 func NewKernel(client *httpclient.Client) *Kernel {
 	return &Kernel{client: client}
 }
 
-// CustomCompute 执行一个完全自定义的计算任务。
+// CustomCompute executes a fully customized computation task.
 func (k *Kernel) CustomCompute(ctx context.Context, params CustomComputeParams) (*ComputeResponse, error) {
 	if err := params.Validate(); err != nil {
 		return nil, err
 	}
 
-	// 构建 API 请求体
+	// Build API request payload
 	payload, err := k.buildComputePayload(params.Text, params.Task, params.OutputSchema, params.CustomFields, params.Resources)
 	if err != nil {
 		return nil, err
 	}
 
-	// 发送请求
+	// Send request
 	rawResp, err := k.client.Post(ctx, computeEndpoint, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	// 提取并返回结果
+	// Extract and return result
 	endPoint, ok := rawResp["end_point"].(map[string]interface{})
 	if !ok {
 		return nil, &sdkerrors.APIError{Message: "API response missing 'end_point' field"}
@@ -50,8 +50,8 @@ func (k *Kernel) CustomCompute(ctx context.Context, params CustomComputeParams) 
 	return &ComputeResponse{Data: endPoint}, nil
 }
 
-// Analyze 执行文本分析。
-// 这是一个便捷方法，用于常见的分析任务。
+// Analyze performs text analysis.
+// This is a convenience method for common analysis tasks.
 func (k *Kernel) Analyze(ctx context.Context, params AnalyzeParams) (*ComputeResponse, error) {
 	if err := params.Validate(); err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (k *Kernel) Analyze(ctx context.Context, params AnalyzeParams) (*ComputeRes
 
 	schema, err := GetPredefinedSchema(params.OutputFormat)
 	if err != nil {
-		// 包装错误，提供更多上下文
+		// Wrap error with more context
 		return nil, &sdkerrors.ValidationError{
 			Field:   "OutputFormat",
 			Message: fmt.Sprintf("invalid predefined schema name: %v", err),
@@ -84,8 +84,8 @@ func (k *Kernel) Analyze(ctx context.Context, params AnalyzeParams) (*ComputeRes
 	return &ComputeResponse{Data: endPoint}, nil
 }
 
-// Translate 执行文本翻译。
-// 这是一个便捷方法，封装了翻译任务的通用逻辑。
+// Translate performs text translation.
+// This is a convenience method that encapsulates common translation task logic.
 func (k *Kernel) Translate(ctx context.Context, params TranslateParams) (*ComputeResponse, error) {
 	if err := params.Validate(); err != nil {
 		return nil, err
@@ -100,8 +100,8 @@ func (k *Kernel) Translate(ctx context.Context, params TranslateParams) (*Comput
 
 	schema, err := GetPredefinedSchema("translation")
 	if err != nil {
-		// 这个错误理论上不应该发生，因为 "translation" 是硬编码的。
-		// 但为了健壮性，我们仍然处理它。
+		// This error should theoretically not occur since "translation" is hardcoded.
+		// But for robustness, we still handle it.
 		return nil, fmt.Errorf("internal error: failed to get 'translation' schema: %w", err)
 	}
 
@@ -128,7 +128,7 @@ func (k *Kernel) Translate(ctx context.Context, params TranslateParams) (*Comput
 	return &ComputeResponse{Data: endPoint}, nil
 }
 
-// buildComputePayload 是一个辅助函数，用于创建发送到 API 的 map。
+// buildComputePayload is a helper function to create the map sent to the API.
 func (k *Kernel) buildComputePayload(
 	text, task string,
 	schema map[string]interface{},
@@ -144,7 +144,7 @@ func (k *Kernel) buildComputePayload(
 	path := make(map[string]interface{})
 	path["expectPath"] = task
 
-	// 添加 schema
+	// Add schema
 	if schema != nil {
 		schemaBytes, err := json.Marshal(schema)
 		if err != nil {
@@ -153,7 +153,7 @@ func (k *Kernel) buildComputePayload(
 		path["endpointClass"] = string(schemaBytes)
 	}
 
-	// 添加自定义字段
+	// Add custom fields
 	for key, value := range customFields {
 		path[key] = value
 	}

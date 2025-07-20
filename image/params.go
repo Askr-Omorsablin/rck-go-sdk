@@ -1,8 +1,8 @@
 package image
 
-import "github.com/rck/rck-go-sdk/sdkerrors"
+import "github.com/Askr-Omorsablin/rck-go-sdk/sdkerrors"
 
-// GenerateParams 定义了 Generate 方法的参数。
+// GenerateParams defines the parameters for the Generate method.
 type GenerateParams struct {
 	Prompt      string
 	Composition string
@@ -10,7 +10,7 @@ type GenerateParams struct {
 	Style       string
 }
 
-// Validate 检查参数是否有效。
+// Validate checks if the parameters are valid.
 func (p *GenerateParams) Validate() error {
 	if p.Prompt == "" {
 		return &sdkerrors.ValidationError{Field: "Prompt", Message: "is required"}

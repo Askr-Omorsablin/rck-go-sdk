@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rck/rck-go-sdk/compute"
-	"github.com/rck/rck-go-sdk/image"
-	"github.com/rck/rck-go-sdk/internal/httpclient"
+	"github.com/Askr-Omorsablin/rck-go-sdk/compute"
+	"github.com/Askr-Omorsablin/rck-go-sdk/image"
+	"github.com/Askr-Omorsablin/rck-go-sdk/internal/httpclient"
 )
 
 const (
@@ -17,18 +17,18 @@ const (
 	defaultTimeout = 60 * time.Second
 )
 
-// Client 是 RCK SDK 的主客户端。
+// Client is the main client for the RCK SDK.
 type Client struct {
-	// Compute 提供了所有文本计算相关的功能。
+	// Compute provides all text computation related functionality.
 	Compute *compute.Kernel
-	// Image 提供了所有图像生成相关的功能。
+	// Image provides all image generation related functionality.
 	Image *image.Generator
 
 	internalHTTPClient *httpclient.Client
 }
 
-// NewClient 使用 API Key 创建一个新的 RCK 客户端。
-// 可以通过传入 Options 来自定义客户端的行为，例如设置超时。
+// NewClient creates a new RCK client using an API Key.
+// Client behavior can be customized by passing Options, such as setting timeout.
 func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	if apiKey == "" {
 		return nil, httpclient.ErrAPIKeyRequired
@@ -61,9 +61,9 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	return client, nil
 }
 
-// TestConnection 测试与 API 的连接。
-// 它通过执行一个简单的分析请求来验证 API Key 和网络连接。
-// 成功时返回 nil，失败时返回一个错误。
+// TestConnection tests the connection to the API.
+// It verifies the API Key and network connection by executing a simple analysis request.
+// Returns nil on success, or an error on failure.
 func (c *Client) TestConnection(ctx context.Context) error {
 	_, err := c.Compute.Analyze(ctx, compute.AnalyzeParams{
 		Text:         "test",

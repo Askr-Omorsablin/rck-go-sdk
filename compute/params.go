@@ -1,8 +1,8 @@
 package compute
 
-import "github.com/rck/rck-go-sdk/sdkerrors"
+import "github.com/Askr-Omorsablin/rck-go-sdk/sdkerrors"
 
-// CustomComputeParams 定义了 CustomCompute 方法的参数。
+// CustomComputeParams defines the parameters for the CustomCompute method.
 type CustomComputeParams struct {
 	Text         string
 	Task         string
@@ -11,7 +11,7 @@ type CustomComputeParams struct {
 	Resources    []map[string]string
 }
 
-// Validate 检查参数是否有效。
+// Validate checks if the parameters are valid.
 func (p *CustomComputeParams) Validate() error {
 	if p.Text == "" {
 		return &sdkerrors.ValidationError{Field: "Text", Message: "is required"}
@@ -22,17 +22,17 @@ func (p *CustomComputeParams) Validate() error {
 	return nil
 }
 
-// AnalyzeParams 定义了 Analyze 方法的参数。
+// AnalyzeParams defines the parameters for the Analyze method.
 type AnalyzeParams struct {
 	Text string
 	Task string
-	// OutputFormat 必须是预定义格式的名称 (如 "basic_analysis")。
-	// 如果需要使用自定义 schema，请改用 CustomCompute 方法。
+	// OutputFormat must be a predefined format name (e.g., "basic_analysis").
+	// If you need to use a custom schema, please use the CustomCompute method instead.
 	OutputFormat string
 	CustomFields map[string]string
 }
 
-// Validate 检查参数是否有效。
+// Validate checks if the parameters are valid.
 func (p *AnalyzeParams) Validate() error {
 	if p.Text == "" {
 		return &sdkerrors.ValidationError{Field: "Text", Message: "is required"}
@@ -46,14 +46,14 @@ func (p *AnalyzeParams) Validate() error {
 	return nil
 }
 
-// TranslateParams 定义了 Translate 方法的参数。
+// TranslateParams defines the parameters for the Translate method.
 type TranslateParams struct {
 	Text                 string
 	TargetLanguage       string
 	IncludeCulturalNotes bool
 }
 
-// Validate 检查参数是否有效。
+// Validate checks if the parameters are valid.
 func (p *TranslateParams) Validate() error {
 	if p.Text == "" {
 		return &sdkerrors.ValidationError{Field: "Text", Message: "is required"}
@@ -64,6 +64,6 @@ func (p *TranslateParams) Validate() error {
 	return nil
 }
 
-// TODO: 在后续实现 Analyze, Translate 等便捷方法时，在这里添加它们的参数结构体。
-// 例如:
+// TODO: Add parameter structures for other convenience methods like Analyze, Translate when implementing them.
+// For example:
 // type AnalyzeParams struct { ... }

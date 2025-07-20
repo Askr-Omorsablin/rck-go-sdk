@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// SaveImages 将 ImageResponse 中的所有图像保存到本地文件。
+// SaveImages saves all images from ImageResponse to local files.
 func (g *Generator) SaveImages(imageResponse *ImageResponse, outputDir, baseFilename string) ([]string, error) {
 	if !imageResponse.Success() {
 		log.Println("Image response is not successful, cannot save")
