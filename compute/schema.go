@@ -1,8 +1,8 @@
 package compute
 
 import (
+	"encoding/json"
 	"fmt"
-	"maps"
 )
 
 // PREDEFINED_SCHEMAS stores all predefined output formats.
@@ -59,6 +59,20 @@ func GetPredefinedSchema(schemaName string) (map[string]interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("unknown schema name: %s", schemaName)
 	}
-	// Return a copy to prevent external modification of the original map
-	return maps.Clone(schema), nil
+
+	// Deep copy using JSON marshal/unmarshal to ensure the original map is not modified.
+	// This is compatible with Go 1.18.
+	b, err := json.Marshal(schema)
+	if err != nil {
+		// This should not happen with the predefined schemas.
+		return nil, fmt.Errorf("internal error: failed to marshal predefined schema '%s': %w", schemaName, err)
+	}
+
+	var clone map[string]interface{}
+	if err := json.Unmarshal(b, &clone); err != nil {
+		// This should also not happen.
+		return nil, fmt.Errorf("internal error: failed to unmarshal predefined schema '%s': %w", schemaName, err)
+	}
+
+	return clone, nil
 }

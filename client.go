@@ -3,7 +3,6 @@ package rck
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -57,7 +56,6 @@ func NewClient(apiKey string, opts ...Option) (*Client, error) {
 	client.Compute = compute.NewKernel(internalClient)
 	client.Image = image.NewGenerator(internalClient)
 
-	log.Println("RCK Client initialized successfully")
 	return client, nil
 }
 

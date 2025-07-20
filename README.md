@@ -3,7 +3,7 @@
 An elegant Go SDK that uses RCK (Relational Calculate Kernel) as an intelligent function kernel.
 
 [![Go Version](https://img.shields.io/badge/go-1.18+-blue.svg)](https://golang.org)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rck/rck-go-sdk)](https://goreportcard.com/report/github.com/rck/rck-go-sdk)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Askr-Omorsablin/rck-go-sdk)](https://goreportcard.com/report/github.com/Askr-Omorsablin/rck-go-sdk)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 ## 🚀 Quick Start
@@ -11,7 +11,7 @@ An elegant Go SDK that uses RCK (Relational Calculate Kernel) as an intelligent 
 ### Installation
 
 ```bash
-go get github.com/rck/rck-go-sdk
+go get github.com/Askr-Omorsablin/rck-go-sdk
 ```
 
 ### Basic Usage
@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/rck/rck-go-sdk"
-	"github.com/rck/rck-go-sdk/compute"
+	"github.com/Askr-Omorsablin/rck-go-sdk"
+	"github.com/Askr-Omorsablin/rck-go-sdk/compute"
 )
 
 func main() {
@@ -61,9 +61,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/rck/rck-go-sdk"
-	"github.com/rck/rck-go-sdk/compute"
-	"github.com/rck/rck-go-sdk/image"
+	"github.com/Askr-Omorsablin/rck-go-sdk"
+	"github.com/Askr-Omorsablin/rck-go-sdk/compute"
+	"github.com/Askr-Omorsablin/rck-go-sdk/image"
 )
 
 func main() {
@@ -301,8 +301,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/rck/rck-go-sdk"
-	"github.com/rck/rck-go-sdk/compute"
+	"github.com/Askr-Omorsablin/rck-go-sdk"
+	"github.com/Askr-Omorsablin/rck-go-sdk/compute"
 )
 
 // EmotionResult defines the return structure for emotion analysis
@@ -414,7 +414,7 @@ import (
 	"net/http"
 	"time"
 	
-	"github.com/rck/rck-go-sdk"
+	"github.com/Askr-Omorsablin/rck-go-sdk"
 )
 
 // Create a client with custom configuration
@@ -431,7 +431,7 @@ The SDK defines specific error types that you can check using `errors.Is` or typ
 ```go
 import (
 	"errors"
-	"github.com/rck/rck-go-sdk/sdkerrors"
+	"github.com/Askr-Omorsablin/rck-go-sdk/sdkerrors"
 )
 
 _, err := client.Compute.Analyze(ctx, ...)

@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,18 +11,19 @@ import (
 )
 
 // SaveImages saves all images from ImageResponse to local files.
-func (g *Generator) SaveImages(imageResponse *ImageResponse, outputDir, baseFilename string) ([]string, error) {
+// It returns a list of successfully saved file paths and a slice of errors
+// encountered during saving individual files.
+func (g *Generator) SaveImages(imageResponse *ImageResponse, outputDir, baseFilename string) (savedFiles []string, saveErrors []error) {
 	if !imageResponse.Success() {
-		log.Println("Image response is not successful, cannot save")
-		return nil, nil
+		return nil, []error{fmt.Errorf("image response is not successful, cannot save")}
 	}
 
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create output directory: %w", err)
+		return nil, []error{fmt.Errorf("failed to create output directory: %w", err)}
 	}
 
-	savedFiles := make([]string, 0, len(imageResponse.Images))
-	log.Printf("Starting to save %d images...\n", len(imageResponse.Images))
+	savedFiles = make([]string, 0, len(imageResponse.Images))
+	saveErrors = make([]error, 0)
 
 	for i, imageInfo := range imageResponse.Images {
 		var imageData []byte
@@ -32,17 +32,17 @@ func (g *Generator) SaveImages(imageResponse *ImageResponse, outputDir, baseFile
 		if imageInfo.ImageData != "" {
 			imageData, err = base64.StdEncoding.DecodeString(imageInfo.ImageData)
 			if err != nil {
-				log.Printf("❌ Failed to decode base64 for image %d: %v\n", i+1, err)
+				saveErrors = append(saveErrors, fmt.Errorf("failed to decode base64 for image %d: %w", i+1, err))
 				continue
 			}
 		} else if imageInfo.URL != "" {
 			imageData, err = downloadImage(imageInfo.URL)
 			if err != nil {
-				log.Printf("❌ Failed to download image %d from %s: %v\n", i+1, imageInfo.URL, err)
+				saveErrors = append(saveErrors, fmt.Errorf("failed to download image %d from %s: %w", i+1, imageInfo.URL, err))
 				continue
 			}
 		} else {
-			log.Printf("Image %d has no available data source, skipping\n", i+1)
+			saveErrors = append(saveErrors, fmt.Errorf("image %d has no available data source, skipping", i+1))
 			continue
 		}
 
@@ -58,16 +58,14 @@ func (g *Generator) SaveImages(imageResponse *ImageResponse, outputDir, baseFile
 
 		err = os.WriteFile(filepath, imageData, 0644)
 		if err != nil {
-			log.Printf("❌ Failed to save image %d to %s: %v\n", i+1, filepath, err)
+			saveErrors = append(saveErrors, fmt.Errorf("failed to save image %d to %s: %w", i+1, filepath, err))
 			continue
 		}
 
 		savedFiles = append(savedFiles, filepath)
-		log.Printf("✅ Image %d saved: %s (%d bytes)\n", i+1, filepath, len(imageData))
 	}
 
-	log.Printf("Successfully saved %d images\n", len(savedFiles))
-	return savedFiles, nil
+	return savedFiles, saveErrors
 }
 
 func downloadImage(url string) ([]byte, error) {

@@ -63,7 +63,3 @@ func (p *TranslateParams) Validate() error {
 	}
 	return nil
 }
-
-// TODO: Add parameter structures for other convenience methods like Analyze, Translate when implementing them.
-// For example:
-// type AnalyzeParams struct { ... }

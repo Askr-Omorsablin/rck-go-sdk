@@ -42,12 +42,16 @@ func (k *Kernel) CustomCompute(ctx context.Context, params CustomComputeParams) 
 	}
 
 	// Extract and return result
-	endPoint, ok := rawResp["end_point"].(map[string]interface{})
-	if !ok {
+	var apiResponse apimodels.APIComputeResponse
+	if err := decodeMapToStruct(rawResp, &apiResponse); err != nil {
+		return nil, &sdkerrors.APIError{Message: fmt.Sprintf("failed to parse API response: %v", err)}
+	}
+
+	if apiResponse.EndPoint == nil {
 		return nil, &sdkerrors.APIError{Message: "API response missing 'end_point' field"}
 	}
 
-	return &ComputeResponse{Data: endPoint}, nil
+	return &ComputeResponse{Data: apiResponse.EndPoint}, nil
 }
 
 // Analyze performs text analysis.
@@ -76,12 +80,16 @@ func (k *Kernel) Analyze(ctx context.Context, params AnalyzeParams) (*ComputeRes
 		return nil, err
 	}
 
-	endPoint, ok := rawResp["end_point"].(map[string]interface{})
-	if !ok {
+	var apiResponse apimodels.APIComputeResponse
+	if err := decodeMapToStruct(rawResp, &apiResponse); err != nil {
+		return nil, &sdkerrors.APIError{Message: fmt.Sprintf("failed to parse API response: %v", err)}
+	}
+
+	if apiResponse.EndPoint == nil {
 		return nil, &sdkerrors.APIError{Message: "API response missing 'end_point' field"}
 	}
 
-	return &ComputeResponse{Data: endPoint}, nil
+	return &ComputeResponse{Data: apiResponse.EndPoint}, nil
 }
 
 // Translate performs text translation.
@@ -120,12 +128,16 @@ func (k *Kernel) Translate(ctx context.Context, params TranslateParams) (*Comput
 		return nil, err
 	}
 
-	endPoint, ok := rawResp["end_point"].(map[string]interface{})
-	if !ok {
+	var apiResponse apimodels.APIComputeResponse
+	if err := decodeMapToStruct(rawResp, &apiResponse); err != nil {
+		return nil, &sdkerrors.APIError{Message: fmt.Sprintf("failed to parse API response: %v", err)}
+	}
+
+	if apiResponse.EndPoint == nil {
 		return nil, &sdkerrors.APIError{Message: "API response missing 'end_point' field"}
 	}
 
-	return &ComputeResponse{Data: endPoint}, nil
+	return &ComputeResponse{Data: apiResponse.EndPoint}, nil
 }
 
 // buildComputePayload is a helper function to create the map sent to the API.
@@ -162,4 +174,16 @@ func (k *Kernel) buildComputePayload(
 		StartPoint: startPoint,
 		Path:       path,
 	}, nil
+}
+
+// decodeMapToStruct is a helper function to decode map[string]interface{} into a struct.
+func decodeMapToStruct(data map[string]interface{}, v interface{}) error {
+	b, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to marshal map: %w", err)
+	}
+	if err := json.Unmarshal(b, v); err != nil {
+		return fmt.Errorf("failed to unmarshal into struct: %w", err)
+	}
+	return nil
 }
